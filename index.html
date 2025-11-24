@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionnaire de Ventes - Marges & Paiements</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .tab-btn { padding: 12px 20px; border: none; cursor: pointer; font-weight: 600; background: #e5e7eb; color: #1f2937; border-radius: 8px 8px 0 0; transition: all 0.3s; margin-right: 4px; }
+        .tab-btn.active { background: #3b82f6; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { background: #1f2937; color: white; padding: 10px; text-align: left; }
+        td { padding: 8px; border-bottom: 1px solid #e5e7eb; }
+        tr:hover { background: #f0fdf4; }
+        .section-card { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 20px; }
+        .section-title { font-size: 18px; font-weight: 700; color: #1f2937; margin-bottom: 15px; }
+        .kpi-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px; border-radius: 8px; text-align: center; }
+        .kpi-label { font-size: 11px; opacity: 0.9; text-transform: uppercase; }
+        .kpi-value { font-size: 24px; font-weight: 700; margin-top: 5px; }
+        .btn-add { background: #3b82f6; color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .btn-add:hover { background: #2563eb; }
+        .btn-edit { background: #10b981; color: white; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 4px; }
+        .btn-edit:hover { background: #059669; }
+        .btn-delete { background: #ef4444; color: white; padding: 4px 8px; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; }
+        .btn-delete:hover { background: #dc2626; }
+        .positive { color: #15803d; font-weight: 600; }
+        .negative { color: #991b1b; font-weight: 600; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto; }
+        .btn-primary { background: #3b82f6; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 20px; margin-right: 10px; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-secondary { background: #e5e7eb; color: #1f2937; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; margin-top: 20px; }
+        .btn-secondary:hover { background: #d1d5db; }
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; margin-bottom: 12px; font-family: inherit; box-sizing: border-box; }
+        input:focus, select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 99, 235, 0.1); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #374151; }
+        .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 12px; margin-bottom: 12px; font-size: 13px; color: #1e40af; line-height: 1.8; }
+        .info-box div { margin-bottom: 4px; }
+        .info-box strong { display: inline-block; min-width: 200px; }
+        .highlight { background: #fef3c7; padding: 12px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid #eab308; }
+        @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } .grid-3 { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-7xl mx-auto p-4">
+        <!-- Header -->
+        <div class="mb-8 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-lg">
+            <h1 class="text-3xl font-bold mb-2">💼 Gestionnaire de Ventes & Marges</h1>
+            <p>Suivi complet des projets, marges et paiements</p>
+        </div>
+
+        <!-- KPI Dashboard -->
+        <div class="overview-grid mb-8">
+            <div class="kpi-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="kpi-label">Marge Totale</div>
+                <div class="kpi-value" id="kpi_total_margin">0 €</div>
+            </div>
+            <div class="kpi-box" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="kpi-label">Ma Part (50%)</div>
+                <div class="kpi-value" id="kpi_my_share">0 €</div>
+            </div>
+            <div class="kpi-box" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="kpi-label">Paiements Clients</div>
+                <div class="kpi-value" id="kpi_client_payments">0 €</div>
+            </div>
+            <div class="kpi-box" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="kpi-label">Réglements Marge</div>
+                <div class="kpi-value" id="kpi_margin_payments">0 €</div>
+            </div>
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="bg-white rounded-t-lg shadow flex flex-wrap gap-2 p-4">
+            <button class="tab-btn active" onclick="switchTab(this, 'overview')">📊 Synthèse</button>
+            <button class="tab-btn" onclick="switchTab(this, 'projects')">📋 Projets</button>
+            <button class="tab-btn" onclick="switchTab(this, 'client_payments')">💳 Paiements Clients</button>
+            <button class="tab-btn" onclick="switchTab(this, 'margin_payments')">💰 Réglements Marge</button>
+        </div>
+
+        <!-- SYNTHESE TAB -->
+        <div id="content_overview" class="tab-content active section-card">
+            <div class="section-title">📊 Vue d'Ensemble</div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>BC</th>
+                            <th>Achat HT (€)</th>
+                            <th>Installation HT (€)</th>
+                            <th>Total Coût (€)</th>
+                            <th>Vente HT (€)</th>
+                            <th>Vente TTC (€)</th>
+                            <th>Marge (€)</th>
+                            <th>Ma Part 50% (€)</th>
+                            <th>Payé Marge (€)</th>
+                            <th>Reste (€)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="overviewTable"></tbody>
+                </table>
+            </div>
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-4 bg-blue-50 rounded">
+                    <div class="text-sm text-gray-600">Total Achat HT</div>
+                    <div class="text-2xl font-bold text-blue-600" id="summary_achat">0 €</div>
+                </div>
+                <div class="p-4 bg-green-50 rounded">
+                    <div class="text-sm text-gray-600">Total Vente TTC</div>
+                    <div class="text-2xl font-bold text-green-600" id="summary_vente">0 €</div>
+                </div>
+                <div class="p-4 bg-purple-50 rounded">
+                    <div class="text-sm text-gray-600">Total Marge Brute</div>
+                    <div class="text-2xl font-bold text-purple-600" id="summary_marge">0 €</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROJETS TAB -->
+        <div id="content_projects" class="tab-content section-card">
+            <div class="flex justify-between items-center mb-6">
+                <div class="section-title">📋 Gestion des Projets</div>
+                <button class="btn-add" onclick="openCreateProjectModal()">+ Créer Projet</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Type</th>
+                            <th>BC</th>
+                            <th>Achat HT (€)</th>
+                            <th>Installation HT (€)</th>
+                            <th>Total Coût (€)</th>
+                            <th>Vente HT (€)</th>
+                            <th>Vente TTC (€)</th>
+                            <th>Marge (€)</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projectsTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PAIEMENTS CLIENTS TAB -->
+        <div id="content_client_payments" class="tab-content section-card">
+            <div class="flex justify-between items-center mb-6">
+                <div class="section-title">💳 Paiements Reçus des Clients</div>
+                <button class="btn-add" onclick="openClientPaymentModal()">+ Ajouter Paiement</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Projet</th>
+                            <th>Montant Dû (€)</th>
+                            <th>Montant Reçu (€)</th>
+                            <th>Reste à Payer (€)</th>
+                            <th>Date</th>
+                            <th>Moyen</th>
+                            <th>Notes</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientPaymentsTable"></tbody>
+                </table>
+            </div>
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-4 bg-blue-50 rounded">
+                    <div class="text-sm text-gray-600">Total Dû</div>
+                    <div class="text-2xl font-bold text-blue-600" id="total_due">0 €</div>
+                </div>
+                <div class="p-4 bg-green-50 rounded">
+                    <div class="text-sm text-gray-600">Total Reçu</div>
+                    <div class="text-2xl font-bold text-green-600" id="total_client_payments">0 €</div>
+                </div>
+                <div class="p-4 bg-yellow-50 rounded">
+                    <div class="text-sm text-gray-600">Total Reste</div>
+                    <div class="text-2xl font-bold text-yellow-600" id="total_pending">0 €</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- REGLEMENTS MARGE TAB -->
+        <div id="content_margin_payments" class="tab-content section-card">
+            <div class="flex justify-between items-center mb-6">
+                <div class="section-title">💰 Réglements sur Ma Marge (50%)</div>
+                <button class="btn-add" onclick="openMarginPaymentModal()">+ Ajouter Règlement</button>
+            </div>
+            <div class="highlight">
+                <strong>💡 Onglet simplifié:</strong> Enregistrez les réglements reçus sur votre marge (date, montant, moyen, notes). Aucun lien aux projets.
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Montant (€)</th>
+                            <th>Moyen</th>
+                            <th>Notes</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="marginPaymentsTable"></tbody>
+                </table>
+            </div>
+            <div class="mt-6 p-4 bg-green-50 rounded">
+                <div class="text-sm text-gray-600">Total Réglements Marge Reçus</div>
+                <div class="text-2xl font-bold text-green-600" id="total_margin_payments">0 €</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CRÉER PROJET -->
+    <div id="createProjectModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold mb-6">Créer un Projet</h2>
+            
+            <div class="form-group">
+                <label>Client *</label>
+                <input type="text" id="proj_client" placeholder="Nom du client">
+            </div>
+
+            <div class="form-group">
+                <label>Type *</label>
+                <select id="proj_type">
+                    <option>RÉSIDENTIEL</option>
+                    <option>MATERIELS PRO</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Bon de Commande</label>
+                <input type="text" id="proj_bon" placeholder="CC-XXXXXX">
+            </div>
+
+            <h3 class="text-lg font-bold mt-6 mb-4">Matériaux & Transports (HT)</h3>
+
+            <div class="grid-3">
+                <div class="form-group">
+                    <label>Onduleur HT (€)</label>
+                    <input type="number" id="proj_onduleur" step="0.01" value="0" onchange="updateCreateProjectCalc()">
+                </div>
+                <div class="form-group">
+                    <label>Panneaux HT (€)</label>
+                    <input type="number" id="proj_panneaux" step="0.01" value="0" onchange="updateCreateProjectCalc()">
+                </div>
+                <div class="form-group">
+                    <label>Batteries HT (€)</label>
+                    <input type="number" id="proj_batteries" step="0.01" value="0" onchange="updateCreateProjectCalc()">
+                </div>
+            </div>
+
+            <div class="grid-3">
+                <div class="form-group">
+                    <label>Accessoires HT (€)</label>
+                    <input type="number" id="proj_accessoires" step="0.01" value="0" onchange="updateCreateProjectCalc()">
+                </div>
+                <div class="form-group">
+                    <label>Transport Import HT (€)</label>
+                    <input type="number" id="proj_transport_import" step="0.01" value="0" onchange="updateCreateProjectCalc()">
+                </div>
+                <div class="form-group">
+                    <label>Transport Livraison HT (€)</label>
+                    <input type="number" id="proj_transport_livraison" step="0.01" value="0" onchange="updateCreateProjectCalc()">
+                </div>
+            </div>
+
+            <h3 class="text-lg font-bold mt-6 mb-4">Installation</h3>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Prix Facture Installation TTC (€)</label>
+                    <input type="number" id="proj_installation_facture_ttc" step="0.01" value="0" onchange="updateCreateProjectCalc()">
+                </div>
+                <div class="form-group">
+                    <label>Coût Installation HT (€) - Payé au sous-traitant</label>
+                    <input type="number" id="proj_installation_cout_ht" step="0.01" value="0" onchange="updateCreateProjectCalc()">
+                </div>
+            </div>
+
+            <h3 class="text-lg font-bold mt-6 mb-4">Prix de Vente</h3>
+
+            <div class="form-group">
+                <label>Prix Vente TTC (€) *</label>
+                <input type="number" id="proj_vente_ttc" step="0.01" value="0" onchange="updateCreateProjectCalc()">
+            </div>
+
+            <div class="info-box">
+                <div><strong>Total Achat HT:</strong> <span id="proj_total_achat">0,00 €</span></div>
+                <div><strong>Installation Facturée HT (TTC/1.10):</strong> <span id="proj_inst_facture_ht">0,00 €</span></div>
+                <div><strong>Coût Installation HT (payé):</strong> <span id="proj_inst_cout_ht">0,00 €</span></div>
+                <div><strong>Marge Installation:</strong> <span id="proj_inst_marge">0,00 €</span></div>
+                <div><strong style="border-top: 2px solid #1e40af; padding-top: 8px; margin-top: 8px;">Total Coût (Achat + Installation):</strong> <span id="proj_cost_total">0,00 €</span></div>
+                <div><strong>Marge Brute (Vente TTC - Total Coût):</strong> <span id="proj_marge">0,00 €</span></div>
+                <div><strong>Ma Part (50%):</strong> <span id="proj_ma_part">0,00 €</span></div>
+            </div>
+
+            <div>
+                <button class="btn-primary" onclick="saveProject()">Créer Projet</button>
+                <button class="btn-secondary" onclick="closeCreateProjectModal()">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL MODIFIER PROJET -->
+    <div id="editProjectModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold mb-6">Modifier Projet</h2>
+            
+            <div class="form-group">
+                <label>Client</label>
+                <input type="text" id="edit_proj_client" readonly style="background: #f3f4f6; color: #666;">
+            </div>
+
+            <div class="form-group">
+                <label>Type</label>
+                <input type="text" id="edit_proj_type" readonly style="background: #f3f4f6; color: #666;">
+            </div>
+
+            <h3 class="text-lg font-bold mt-6 mb-4">Matériaux & Transports (HT)</h3>
+
+            <div class="grid-3">
+                <div class="form-group">
+                    <label>Onduleur HT (€)</label>
+                    <input type="number" id="edit_proj_onduleur" step="0.01" onchange="updateEditProjectCalc()">
+                </div>
+                <div class="form-group">
+                    <label>Panneaux HT (€)</label>
+                    <input type="number" id="edit_proj_panneaux" step="0.01" onchange="updateEditProjectCalc()">
+                </div>
+                <div class="form-group">
+                    <label>Batteries HT (€)</label>
+                    <input type="number" id="edit_proj_batteries" step="0.01" onchange="updateEditProjectCalc()">
+                </div>
+            </div>
+
+            <div class="grid-3">
+                <div class="form-group">
+                    <label>Accessoires HT (€)</label>
+                    <input type="number" id="edit_proj_accessoires" step="0.01" onchange="updateEditProjectCalc()">
+                </div>
+                <div class="form-group">
+                    <label>Transport Import HT (€)</label>
+                    <input type="number" id="edit_proj_transport_import" step="0.01" onchange="updateEditProjectCalc()">
+                </div>
+                <div class="form-group">
+                    <label>Transport Livraison HT (€)</label>
+                    <input type="number" id="edit_proj_transport_livraison" step="0.01" onchange="updateEditProjectCalc()">
+                </div>
+            </div>
+
+            <h3 class="text-lg font-bold mt-6 mb-4">Installation</h3>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Prix Facture Installation TTC (€)</label>
+                    <input type="number" id="edit_proj_installation_facture_ttc" step="0.01" onchange="updateEditProjectCalc()">
+                </div>
+                <div class="form-group">
+                    <label>Coût Installation HT (€) - Payé au sous-traitant</label>
+                    <input type="number" id="edit_proj_installation_cout_ht" step="0.01" onchange="updateEditProjectCalc()">
+                </div>
+            </div>
+
+            <h3 class="text-lg font-bold mt-6 mb-4">Prix de Vente</h3>
+
+            <div class="form-group">
+                <label>Prix Vente TTC (€)</label>
+                <input type="number" id="edit_proj_vente_ttc" step="0.01" onchange="updateEditProjectCalc()">
+            </div>
+
+            <div class="info-box">
+                <div><strong>Total Achat HT:</strong> <span id="edit_proj_total_achat">0,00 €</span></div>
+                <div><strong>Installation Facturée HT (TTC/1.10):</strong> <span id="edit_proj_inst_facture_ht">0,00 €</span></div>
+                <div><strong>Coût Installation HT (payé):</strong> <span id="edit_proj_inst_cout_ht">0,00 €</span></div>
+                <div><strong>Marge Installation:</strong> <span id="edit_proj_inst_marge">0,00 €</span></div>
+                <div><strong style="border-top: 2px solid #1e40af; padding-top: 8px; margin-top: 8px;">Total Coût (Achat + Installation):</strong> <span id="edit_proj_cost_total">0,00 €</span></div>
+                <div><strong>Marge Brute (Vente TTC - Total Coût):</strong> <span id="edit_proj_marge">0,00 €</span></div>
+                <div><strong>Ma Part (50%):</strong> <span id="edit_proj_ma_part">0,00 €</span></div>
+            </div>
+
+            <div>
+                <button class="btn-primary" onclick="saveEditProject()">Enregistrer</button>
+                <button class="btn-secondary" onclick="closeEditProjectModal()">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PAIEMENT CLIENT -->
+    <div id="clientPaymentModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold mb-6">Paiement Client</h2>
+            <div>
+                <div class="form-group">
+                    <label>Date *</label>
+                    <input type="date" id="cp_date">
+                </div>
+
+                <div class="form-group">
+                    <label>Projet *</label>
+                    <select id="cp_project"></select>
+                </div>
+
+                <div class="form-group">
+                    <label>Montant Reçu (€) *</label>
+                    <input type="number" id="cp_amount" step="0.01" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label>Moyen de Paiement</label>
+                    <select id="cp_method">
+                        <option>Virement</option>
+                        <option>Chèque</option>
+                        <option>Espèces</option>
+                        <option>Carte Bancaire</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="cp_notes" placeholder="Notes..." style="height: 60px;"></textarea>
+                </div>
+
+                <div>
+                    <button class="btn-primary" onclick="saveClientPayment()">Enregistrer</button>
+                    <button class="btn-secondary" onclick="closeClientPaymentModal()">Annuler</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PAIEMENT MARGE -->
+    <div id="marginPaymentModal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-2xl font-bold mb-6">Règlement Marge (50%)</h2>
+            <div>
+                <div class="form-group">
+                    <label>Date *</label>
+                    <input type="date" id="mp_date">
+                </div>
+
+                <div class="form-group">
+                    <label>Montant Reçu (€) *</label>
+                    <input type="number" id="mp_amount" step="0.01" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label>Moyen de Paiement</label>
+                    <select id="mp_method">
+                        <option>Virement</option>
+                        <option>Chèque</option>
+                        <option>Espèces</option>
+                        <option>Carte Bancaire</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="mp_notes" placeholder="Notes..." style="height: 60px;"></textarea>
+                </div>
+
+                <div>
+                    <button class="btn-primary" onclick="saveMarginPayment()">Enregistrer</button>
+                    <button class="btn-secondary" onclick="closeMarginPaymentModal()">Annuler</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Données initiales
+        const initialProjects = [
+            {client:"BOYER",designation:"RESIDENTIEL",bon_cmd:"CC-014199",onduleur_ht:0,panneaux_ht:0,batteries_ht:1190,accessoires_ht:0,transport_import:0,transport_livraison:0,installation_ht:800,prix_vente_ttc:5800},
+            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014205",onduleur_ht:1318,panneaux_ht:0,batteries_ht:1342,accessoires_ht:0,transport_import:0,transport_livraison:84,installation_ht:0,prix_vente_ttc:5009.06},
+            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014217",onduleur_ht:699,panneaux_ht:0,batteries_ht:1342,accessoires_ht:0,transport_import:0,transport_livraison:200,installation_ht:0,prix_vente_ttc:4190.66},
+            {client:"NGM GROUP",designation:"MATERIELS PRO",bon_cmd:"CC-014218",onduleur_ht:5670,panneaux_ht:0,batteries_ht:0,accessoires_ht:1126,transport_import:0,transport_livraison:294.74,installation_ht:0,prix_vente_ttc:9442.66},
+            {client:"HOME ELEC",designation:"MATERIELS PRO",bon_cmd:"CC-014200",onduleur_ht:2849,panneaux_ht:0,batteries_ht:0,accessoires_ht:473.8,transport_import:0,transport_livraison:102.6,installation_ht:0,prix_vente_ttc:5003.88},
+            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014204",onduleur_ht:2530,panneaux_ht:0,batteries_ht:0,accessoires_ht:126,transport_import:0,transport_livraison:0,installation_ht:0,prix_vente_ttc:3237.6},
+            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014222",onduleur_ht:95,panneaux_ht:0,batteries_ht:0,accessoires_ht:7.5,transport_import:0,transport_livraison:22.98,installation_ht:0,prix_vente_ttc:153},
+            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014227",onduleur_ht:0,panneaux_ht:0,batteries_ht:0,accessoires_ht:579.12,transport_import:0,transport_livraison:36.99,installation_ht:0,prix_vente_ttc:1490.34},
+            {client:"QUEVREUX",designation:"RESIDENTIEL",bon_cmd:"CC-014229",onduleur_ht:0,panneaux_ht:0,batteries_ht:670,accessoires_ht:0,transport_import:0,transport_livraison:0,installation_ht:0,prix_vente_ttc:2100},
+            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014236",onduleur_ht:0,panneaux_ht:0,batteries_ht:0,accessoires_ht:14.5,transport_import:0,transport_livraison:14.54,installation_ht:0,prix_vente_ttc:48.5},
+            {client:"SOM-BAT",designation:"MATERIELS PRO",bon_cmd:"CC-014252",onduleur_ht:2100,panneaux_ht:0,batteries_ht:0,accessoires_ht:0,transport_import:0,transport_livraison:58.14,installation_ht:0,prix_vente_ttc:3552},
+            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014247",onduleur_ht:0,panneaux_ht:0,batteries_ht:0,accessoires_ht:126,transport_import:0,transport_livraison:0,installation_ht:0,prix_vente_ttc:198},
+            {client:"GREEN ENERGY",designation:"MATERIELS PRO",bon_cmd:"CC-014246",onduleur_ht:1245.92,panneaux_ht:0,batteries_ht:0,accessoires_ht:0,transport_import:0,transport_livraison:10.71,installation_ht:0,prix_vente_ttc:1656},
+            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014240",onduleur_ht:1318,panneaux_ht:0,batteries_ht:1340,accessoires_ht:0,transport_import:0,transport_livraison:150,installation_ht:0,prix_vente_ttc:5109.6},
+        ];
+
+        let projects = JSON.parse(localStorage.getItem('projects')) || initialProjects;
+        // Force reload if localStorage is empty/corrupted
+        if (!projects || projects.length === 0) {
+            projects = initialProjects;
+            localStorage.setItem('projects', JSON.stringify(projects));
+        }
+        let clientPayments = JSON.parse(localStorage.getItem('clientPayments')) || [];
+        let marginPayments = JSON.parse(localStorage.getItem('marginPayments')) || [];
+        let editingProjectIndex = null;
+
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val || 0);
+        }
+
+        // ===== CALCULS CORRECTS =====
+        function getTotalAchatHT(proj) {
+            return proj.onduleur_ht + proj.panneaux_ht + proj.batteries_ht + proj.accessoires_ht + proj.transport_import + proj.transport_livraison;
+        }
+
+        function getInstallationFactureHT(proj) {
+            // Installation facturée HT = Installation Facture TTC / 1.10
+            return proj.installation_facture_ttc / 1.10;
+        }
+
+        function getInstallationCoutHT(proj) {
+            // Coût installation payé au sous-traitant (en HT)
+            return proj.installation_cout_ht;
+        }
+
+        function getInstallationMargin(proj) {
+            // Marge Installation = Installation Facturée HT - Coût Installation HT
+            return getInstallationFactureHT(proj) - getInstallationCoutHT(proj);
+        }
+
+        function getTotalCostHT(proj) {
+            // Total Coût HT = Achat HT + Coût Installation HT (ce qu'on paye)
+            return getTotalAchatHT(proj) + getInstallationCoutHT(proj);
+        }
+
+        function getMargin(proj) {
+            // Marge = Vente TTC - Total Coût HT
+            return proj.prix_vente_ttc - getTotalCostHT(proj);
+        }
+
+        function getMyShare(proj) {
+            return getMargin(proj) * 0.5;
+        }
+
+        function switchTab(btn, tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('content_' + tab).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        function renderOverview() {
+            const tbody = document.getElementById('overviewTable');
+            tbody.innerHTML = '';
+            
+            let totalAchatHT = 0, totalInstallationCoutHT = 0, totalVente = 0, totalMargin = 0;
+
+            projects.forEach((proj, idx) => {
+                const achatHT = getTotalAchatHT(proj);
+                const instCoutHT = getInstallationCoutHT(proj);
+                const totalCostHT = getTotalCostHT(proj);
+                const margin = getMargin(proj);
+                const myShare = getMyShare(proj);
+                const marginPaid = marginPayments.reduce((s, p) => s + p.amount, 0);
+                const remaining = myShare - marginPaid;
+
+                totalAchatHT += achatHT;
+                totalInstallationCoutHT += instCoutHT;
+                totalVente += proj.prix_vente_ttc;
+                totalMargin += margin;
+
+                const venteHT = getVenteHT(proj);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${proj.client}</td>
+                    <td>${proj.bon_cmd}</td>
+                    <td>${formatCurrency(achatHT)}</td>
+                    <td>${formatCurrency(instCoutHT)}</td>
+                    <td>${formatCurrency(totalCostHT)}</td>
+                    <td>${formatCurrency(venteHT)}</td>
+                    <td>${formatCurrency(proj.prix_vente_ttc)}</td>
+                    <td><span class="positive">${formatCurrency(margin)}</span></td>
+                    <td><span class="positive">${formatCurrency(myShare)}</span></td>
+                    <td>${formatCurrency(marginPaid)}</td>
+                    <td>${formatCurrency(remaining)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.getElementById('summary_achat').textContent = formatCurrency(totalAchatHT);
+            document.getElementById('summary_vente').textContent = formatCurrency(totalVente);
+            document.getElementById('summary_marge').textContent = formatCurrency(totalMargin);
+        }
+
+        function renderProjects() {
+            const tbody = document.getElementById('projectsTable');
+            tbody.innerHTML = '';
+
+            projects.forEach((proj, idx) => {
+                const achatHT = getTotalAchatHT(proj);
+                const instCoutHT = getInstallationCoutHT(proj);
+                const totalCostHT = getTotalCostHT(proj);
+                const venteHT = getVenteHT(proj);
+                const margin = getMargin(proj);
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${proj.client}</td>
+                    <td>${proj.designation}</td>
+                    <td>${proj.bon_cmd}</td>
+                    <td>${formatCurrency(achatHT)}</td>
+                    <td>${formatCurrency(instCoutHT)}</td>
+                    <td>${formatCurrency(totalCostHT)}</td>
+                    <td>${formatCurrency(venteHT)}</td>
+                    <td>${formatCurrency(proj.prix_vente_ttc)}</td>
+                    <td><span class="positive">${formatCurrency(margin)}</span></td>
+                    <td>
+                        <button onclick="editProject(${idx})" class="btn-edit">Modifier</button>
+                        <button onclick="deleteProject(${idx})" class="btn-delete">Supprimer</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function renderClientPayments() {
+            const tbody = document.getElementById('clientPaymentsTable');
+            tbody.innerHTML = '';
+            let totalDue = 0, totalReceived = 0;
+
+            projects.forEach((proj, projIdx) => {
+                const due = proj.prix_vente_ttc;
+                const received = clientPayments
+                    .filter(p => p.projectId === projIdx)
+                    .reduce((sum, p) => sum + p.amount, 0);
+                const remaining = due - received;
+                
+                totalDue += due;
+                totalReceived += received;
+
+                const projPayments = clientPayments.filter(p => p.projectId === projIdx);
+                
+                if (projPayments.length === 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><strong>${proj.client} - ${proj.bon_cmd}</strong></td>
+                        <td>${formatCurrency(due)}</td>
+                        <td>-</td>
+                        <td><span class="negative">${formatCurrency(remaining)}</span></td>
+                        <td colspan="4" style="text-align: center; color: #999;">Aucun paiement</td>
+                    `;
+                    tbody.appendChild(row);
+                } else {
+                    projPayments.forEach((pay, payIdx) => {
+                        const payRow = document.createElement('tr');
+                        if (payIdx === 0) {
+                            payRow.innerHTML = `
+                                <td><strong>${proj.client} - ${proj.bon_cmd}</strong></td>
+                                <td>${formatCurrency(due)}</td>
+                                <td>${formatCurrency(pay.amount)}</td>
+                                <td><span class="${remaining <= 0 ? 'positive' : 'negative'}">${formatCurrency(remaining)}</span></td>
+                                <td>${new Date(pay.date).toLocaleDateString('fr-FR')}</td>
+                                <td>${pay.method}</td>
+                                <td>${pay.notes}</td>
+                                <td><button onclick="deleteClientPayment(${clientPayments.indexOf(pay)})" class="btn-delete">Supprimer</button></td>
+                            `;
+                        } else {
+                            payRow.innerHTML = `
+                                <td></td>
+                                <td></td>
+                                <td>${formatCurrency(pay.amount)}</td>
+                                <td></td>
+                                <td>${new Date(pay.date).toLocaleDateString('fr-FR')}</td>
+                                <td>${pay.method}</td>
+                                <td>${pay.notes}</td>
+                                <td><button onclick="deleteClientPayment(${clientPayments.indexOf(pay)})" class="btn-delete">Supprimer</button></td>
+                            `;
+                        }
+                        tbody.appendChild(payRow);
+                    });
+                }
+            });
+
+            document.getElementById('total_due').textContent = formatCurrency(totalDue);
+            document.getElementById('total_client_payments').textContent = formatCurrency(totalReceived);
+            document.getElementById('total_pending').textContent = formatCurrency(totalDue - totalReceived);
+        }
+
+        function renderMarginPayments() {
+            const tbody = document.getElementById('marginPaymentsTable');
+            tbody.innerHTML = '';
+            let total = 0;
+
+            marginPayments.forEach((pay, idx) => {
+                total += pay.amount;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${new Date(pay.date).toLocaleDateString('fr-FR')}</td>
+                    <td><span class="positive">${formatCurrency(pay.amount)}</span></td>
+                    <td>${pay.method}</td>
+                    <td>${pay.notes}</td>
+                    <td><button onclick="deleteMarginPayment(${idx})" class="btn-delete">Supprimer</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.getElementById('total_margin_payments').textContent = formatCurrency(total);
+        }
+
+        function updateKPIs() {
+            let totalMargin = 0, myShare = 0;
+            projects.forEach(proj => {
+                totalMargin += getMargin(proj);
+                myShare += getMyShare(proj);
+            });
+
+            const clientPayTotal = clientPayments.reduce((s, p) => s + p.amount, 0);
+            const marginPayTotal = marginPayments.reduce((s, p) => s + p.amount, 0);
+
+            document.getElementById('kpi_total_margin').textContent = formatCurrency(totalMargin);
+            document.getElementById('kpi_my_share').textContent = formatCurrency(myShare);
+            document.getElementById('kpi_client_payments').textContent = formatCurrency(clientPayTotal);
+            document.getElementById('kpi_margin_payments').textContent = formatCurrency(marginPayTotal);
+        }
+
+        function populateProjectSelects() {
+            const select = document.getElementById('cp_project');
+            select.innerHTML = '';
+            projects.forEach((proj, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = `${proj.client} - ${proj.bon_cmd}`;
+                select.appendChild(opt);
+            });
+        }
+
+        // ===== CREATE PROJECT MODAL =====
+        function openCreateProjectModal() {
+            document.getElementById('createProjectModal').classList.add('active');
+            document.getElementById('proj_client').value = '';
+            document.getElementById('proj_bon').value = '';
+            document.getElementById('proj_onduleur').value = 0;
+            document.getElementById('proj_panneaux').value = 0;
+            document.getElementById('proj_batteries').value = 0;
+            document.getElementById('proj_accessoires').value = 0;
+            document.getElementById('proj_transport_import').value = 0;
+            document.getElementById('proj_transport_livraison').value = 0;
+            document.getElementById('proj_installation_facture_ttc').value = 0;
+            document.getElementById('proj_installation_cout_ht').value = 0;
+            document.getElementById('proj_vente_ttc').value = 0;
+            updateCreateProjectCalc();
+        }
+
+        function closeCreateProjectModal() {
+            document.getElementById('createProjectModal').classList.remove('active');
+        }
+
+        function updateCreateProjectCalc() {
+            const onduleur = parseFloat(document.getElementById('proj_onduleur').value) || 0;
+            const panneaux = parseFloat(document.getElementById('proj_panneaux').value) || 0;
+            const batteries = parseFloat(document.getElementById('proj_batteries').value) || 0;
+            const accessoires = parseFloat(document.getElementById('proj_accessoires').value) || 0;
+            const transport_import = parseFloat(document.getElementById('proj_transport_import').value) || 0;
+            const transport_livraison = parseFloat(document.getElementById('proj_transport_livraison').value) || 0;
+            const installation_facture_ttc = parseFloat(document.getElementById('proj_installation_facture_ttc').value) || 0;
+            const installation_cout_ht = parseFloat(document.getElementById('proj_installation_cout_ht').value) || 0;
+            const vente_ttc = parseFloat(document.getElementById('proj_vente_ttc').value) || 0;
+
+            const total_achat_ht = onduleur + panneaux + batteries + accessoires + transport_import + transport_livraison;
+            const inst_facture_ht = installation_facture_ttc / 1.10;
+            const inst_marge = inst_facture_ht - installation_cout_ht;
+            const total_cost_ht = total_achat_ht + installation_cout_ht;
+            const marge = vente_ttc - total_cost_ht;
+            const ma_part = marge * 0.5;
+
+            document.getElementById('proj_total_achat').textContent = formatCurrency(total_achat_ht);
+            document.getElementById('proj_inst_facture_ht').textContent = formatCurrency(inst_facture_ht);
+            document.getElementById('proj_inst_cout_ht').textContent = formatCurrency(installation_cout_ht);
+            document.getElementById('proj_inst_marge').textContent = formatCurrency(inst_marge);
+            document.getElementById('proj_cost_total').textContent = formatCurrency(total_cost_ht);
+            document.getElementById('proj_marge').textContent = formatCurrency(marge);
+            document.getElementById('proj_ma_part').textContent = formatCurrency(ma_part);
+        }
+
+        function saveProject() {
+            const client = document.getElementById('proj_client').value.trim();
+            const bon = document.getElementById('proj_bon').value.trim();
+            const type = document.getElementById('proj_type').value;
+            const vente_ttc = parseFloat(document.getElementById('proj_vente_ttc').value) || 0;
+
+            if (!client || vente_ttc <= 0) {
+                alert('Client et Prix Vente TTC obligatoires');
+                return;
+            }
+
+            const proj = {
+                client, bon_cmd: bon, designation: type,
+                onduleur_ht: parseFloat(document.getElementById('proj_onduleur').value) || 0,
+                panneaux_ht: parseFloat(document.getElementById('proj_panneaux').value) || 0,
+                batteries_ht: parseFloat(document.getElementById('proj_batteries').value) || 0,
+                accessoires_ht: parseFloat(document.getElementById('proj_accessoires').value) || 0,
+                transport_import: parseFloat(document.getElementById('proj_transport_import').value) || 0,
+                transport_livraison: parseFloat(document.getElementById('proj_transport_livraison').value) || 0,
+                installation_facture_ttc: parseFloat(document.getElementById('proj_installation_facture_ttc').value) || 0,
+                installation_cout_ht: parseFloat(document.getElementById('proj_installation_cout_ht').value) || 0,
+                prix_vente_ttc: vente_ttc
+            };
+
+            projects.push(proj);
+            localStorage.setItem('projects', JSON.stringify(projects));
+            renderAll();
+            closeCreateProjectModal();
+        }
+
+        function editProject(idx) {
+            editingProjectIndex = idx;
+            const proj = projects[idx];
+            document.getElementById('edit_proj_client').value = proj.client;
+            document.getElementById('edit_proj_type').value = proj.designation;
+            document.getElementById('edit_proj_onduleur').value = proj.onduleur_ht;
+            document.getElementById('edit_proj_panneaux').value = proj.panneaux_ht;
+            document.getElementById('edit_proj_batteries').value = proj.batteries_ht;
+            document.getElementById('edit_proj_accessoires').value = proj.accessoires_ht;
+            document.getElementById('edit_proj_transport_import').value = proj.transport_import;
+            document.getElementById('edit_proj_transport_livraison').value = proj.transport_livraison;
+            document.getElementById('edit_proj_installation_facture_ttc').value = proj.installation_facture_ttc || 0;
+            document.getElementById('edit_proj_installation_cout_ht').value = proj.installation_cout_ht || 0;
+            document.getElementById('edit_proj_vente_ttc').value = proj.prix_vente_ttc;
+            updateEditProjectCalc();
+            document.getElementById('editProjectModal').classList.add('active');
+        }
+
+        function closeEditProjectModal() {
+            document.getElementById('editProjectModal').classList.remove('active');
+            editingProjectIndex = null;
+        }
+
+        function updateEditProjectCalc() {
+            const onduleur = parseFloat(document.getElementById('edit_proj_onduleur').value) || 0;
+            const panneaux = parseFloat(document.getElementById('edit_proj_panneaux').value) || 0;
+            const batteries = parseFloat(document.getElementById('edit_proj_batteries').value) || 0;
+            const accessoires = parseFloat(document.getElementById('edit_proj_accessoires').value) || 0;
+            const transport_import = parseFloat(document.getElementById('edit_proj_transport_import').value) || 0;
+            const transport_livraison = parseFloat(document.getElementById('edit_proj_transport_livraison').value) || 0;
+            const installation_facture_ttc = parseFloat(document.getElementById('edit_proj_installation_facture_ttc').value) || 0;
+            const installation_cout_ht = parseFloat(document.getElementById('edit_proj_installation_cout_ht').value) || 0;
+            const vente_ttc = parseFloat(document.getElementById('edit_proj_vente_ttc').value) || 0;
+
+            const total_achat_ht = onduleur + panneaux + batteries + accessoires + transport_import + transport_livraison;
+            const inst_facture_ht = installation_facture_ttc / 1.10;
+            const inst_marge = inst_facture_ht - installation_cout_ht;
+            const total_cost_ht = total_achat_ht + installation_cout_ht;
+            const marge = vente_ttc - total_cost_ht;
+            const ma_part = marge * 0.5;
+
+            document.getElementById('edit_proj_total_achat').textContent = formatCurrency(total_achat_ht);
+            document.getElementById('edit_proj_inst_facture_ht').textContent = formatCurrency(inst_facture_ht);
+            document.getElementById('edit_proj_inst_cout_ht').textContent = formatCurrency(installation_cout_ht);
+            document.getElementById('edit_proj_inst_marge').textContent = formatCurrency(inst_marge);
+            document.getElementById('edit_proj_cost_total').textContent = formatCurrency(total_cost_ht);
+            document.getElementById('edit_proj_marge').textContent = formatCurrency(marge);
+            document.getElementById('edit_proj_ma_part').textContent = formatCurrency(ma_part);
+        }
+
+        function saveEditProject() {
+            if (editingProjectIndex === null) return;
+            const proj = projects[editingProjectIndex];
+            proj.onduleur_ht = parseFloat(document.getElementById('edit_proj_onduleur').value) || 0;
+            proj.panneaux_ht = parseFloat(document.getElementById('edit_proj_panneaux').value) || 0;
+            proj.batteries_ht = parseFloat(document.getElementById('edit_proj_batteries').value) || 0;
+            proj.accessoires_ht = parseFloat(document.getElementById('edit_proj_accessoires').value) || 0;
+            proj.transport_import = parseFloat(document.getElementById('edit_proj_transport_import').value) || 0;
+            proj.transport_livraison = parseFloat(document.getElementById('edit_proj_transport_livraison').value) || 0;
+            proj.installation_facture_ttc = parseFloat(document.getElementById('edit_proj_installation_facture_ttc').value) || 0;
+            proj.installation_cout_ht = parseFloat(document.getElementById('edit_proj_installation_cout_ht').value) || 0;
+            proj.prix_vente_ttc = parseFloat(document.getElementById('edit_proj_vente_ttc').value) || 0;
+            localStorage.setItem('projects', JSON.stringify(projects));
+            renderAll();
+            closeEditProjectModal();
+        }
+
+        function deleteProject(idx) {
+            if (confirm('Êtes-vous sûr ?')) {
+                projects.splice(idx, 1);
+                localStorage.setItem('projects', JSON.stringify(projects));
+                renderAll();
+            }
+        }
+
+        // ===== CLIENT PAYMENT MODAL =====
+        function openClientPaymentModal() {
+            populateProjectSelects();
+            document.getElementById('clientPaymentModal').classList.add('active');
+            document.getElementById('cp_date').valueAsDate = new Date();
+            document.getElementById('cp_amount').value = 0;
+            document.getElementById('cp_notes').value = '';
+        }
+
+        function closeClientPaymentModal() {
+            document.getElementById('clientPaymentModal').classList.remove('active');
+        }
+
+        function saveClientPayment() {
+            const date = document.getElementById('cp_date').value;
+            const projectId = parseInt(document.getElementById('cp_project').value);
+            const amount = parseFloat(document.getElementById('cp_amount').value) || 0;
+            const method = document.getElementById('cp_method').value;
+            const notes = document.getElementById('cp_notes').value;
+
+            if (!date || isNaN(projectId) || amount <= 0) {
+                alert('Remplissez tous les champs');
+                return;
+            }
+
+            clientPayments.push({ date, projectId, amount, method, notes });
+            localStorage.setItem('clientPayments', JSON.stringify(clientPayments));
+            renderAll();
+            closeClientPaymentModal();
+        }
+
+        function deleteClientPayment(idx) {
+            if (confirm('Êtes-vous sûr ?')) {
+                clientPayments.splice(idx, 1);
+                localStorage.setItem('clientPayments', JSON.stringify(clientPayments));
+                renderAll();
+            }
+        }
+
+        // ===== MARGIN PAYMENT MODAL =====
+        function openMarginPaymentModal() {
+            document.getElementById('marginPaymentModal').classList.add('active');
+            document.getElementById('mp_date').valueAsDate = new Date();
+            document.getElementById('mp_amount').value = 0;
+            document.getElementById('mp_notes').value = '';
+        }
+
+        function closeMarginPaymentModal() {
+            document.getElementById('marginPaymentModal').classList.remove('active');
+        }
+
+        function saveMarginPayment() {
+            const date = document.getElementById('mp_date').value;
+            const amount = parseFloat(document.getElementById('mp_amount').value) || 0;
+            const method = document.getElementById('mp_method').value;
+            const notes = document.getElementById('mp_notes').value;
+
+            if (!date || amount <= 0) {
+                alert('Remplissez tous les champs');
+                return;
+            }
+
+            marginPayments.push({ date, amount, method, notes });
+            localStorage.setItem('marginPayments', JSON.stringify(marginPayments));
+            renderAll();
+            closeMarginPaymentModal();
+        }
+
+        function deleteMarginPayment(idx) {
+            if (confirm('Êtes-vous sûr ?')) {
+                marginPayments.splice(idx, 1);
+                localStorage.setItem('marginPayments', JSON.stringify(marginPayments));
+                renderAll();
+            }
+        }
+
+        // ===== MAIN RENDER =====
+        function renderAll() {
+            renderOverview();
+            renderProjects();
+            renderClientPayments();
+            renderMarginPayments();
+            updateKPIs();
+            populateProjectSelects();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Force reset if data is missing
+            if (!projects || projects.length === 0) {
+                console.log('Data missing, forcing reset...');
+                localStorage.removeItem('projects');
+                localStorage.removeItem('clientPayments');
+                localStorage.removeItem('marginPayments');
+                projects = initialProjects;
+                clientPayments = [
+                    {date:"2025-11-24",projectId:0,amount:5800,method:"Virement",notes:"BOYER"},
+                    {date:"2025-11-24",projectId:1,amount:5009.06,method:"Virement",notes:"DISTRILEC"},
+                    {date:"2025-11-24",projectId:2,amount:4190.66,method:"Virement",notes:"DISTRILEC"},
+                    {date:"2025-11-24",projectId:4,amount:5003.88,method:"Virement",notes:"HOME ELEC"},
+                    {date:"2025-11-24",projectId:5,amount:3237.6,method:"Virement",notes:"DISTRILEC"},
+                    {date:"2025-11-24",projectId:6,amount:153,method:"Virement",notes:"DISTRILEC"},
+                    {date:"2025-11-24",projectId:7,amount:1490.34,method:"Virement",notes:"DISTRILEC"},
+                    {date:"2025-11-24",projectId:8,amount:2100,method:"Virement",notes:"QUEVREUX"},
+                    {date:"2025-11-24",projectId:9,amount:48.5,method:"Virement",notes:"DISTRILEC"},
+                    {date:"2025-11-24",projectId:10,amount:3552,method:"Virement",notes:"SOM-BAT"},
+                    {date:"2025-11-24",projectId:12,amount:1656,method:"Virement",notes:"GREEN ENERGY"},
+                    {date:"2025-11-24",projectId:13,amount:5109.6,method:"Virement",notes:"DISTRILEC"},
+                ];
+                marginPayments = [];
+                localStorage.setItem('projects', JSON.stringify(projects));
+                localStorage.setItem('clientPayments', JSON.stringify(clientPayments));
+                localStorage.setItem('marginPayments', JSON.stringify(marginPayments));
+            }
+            console.log('Projects loaded:', projects.length);
+            console.log('First project:', projects[0]);
+            renderAll();
+            document.getElementById('proj_vente_ttc').addEventListener('input', updateCreateProjectCalc);
+            document.getElementById('proj_installation').addEventListener('input', updateCreateProjectCalc);
+            document.getElementById('edit_proj_vente_ttc').addEventListener('input', updateEditProjectCalc);
+            document.getElementById('edit_proj_installation').addEventListener('input', updateEditProjectCalc);
+        });
+    </script>
+</body>
+</html>
