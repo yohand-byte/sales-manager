@@ -51,13 +51,11 @@
 </head>
 <body class="bg-gray-50">
     <div class="max-w-7xl mx-auto p-4">
-        <!-- Header -->
         <div class="mb-8 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-lg">
             <h1 class="text-3xl font-bold mb-2">💼 Gestionnaire de Ventes & Marges</h1>
             <p>Suivi complet des projets, marges et paiements</p>
         </div>
 
-        <!-- KPI Dashboard -->
         <div class="overview-grid mb-8">
             <div class="kpi-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                 <div class="kpi-label">Marge Totale</div>
@@ -77,7 +75,6 @@
             </div>
         </div>
 
-        <!-- Tabs Navigation -->
         <div class="bg-white rounded-t-lg shadow flex flex-wrap gap-2 p-4">
             <button class="tab-btn active" onclick="switchTab(this, 'overview')">📊 Synthèse</button>
             <button class="tab-btn" onclick="switchTab(this, 'projects')">📋 Projets</button>
@@ -85,7 +82,6 @@
             <button class="tab-btn" onclick="switchTab(this, 'margin_payments')">💰 Réglements Marge</button>
         </div>
 
-        <!-- SYNTHESE TAB -->
         <div id="content_overview" class="tab-content active section-card">
             <div class="section-title">📊 Vue d'Ensemble</div>
             <div style="overflow-x: auto;">
@@ -124,7 +120,6 @@
             </div>
         </div>
 
-        <!-- PROJETS TAB -->
         <div id="content_projects" class="tab-content section-card">
             <div class="flex justify-between items-center mb-6">
                 <div class="section-title">📋 Gestion des Projets</div>
@@ -151,7 +146,6 @@
             </div>
         </div>
 
-        <!-- PAIEMENTS CLIENTS TAB -->
         <div id="content_client_payments" class="tab-content section-card">
             <div class="flex justify-between items-center mb-6">
                 <div class="section-title">💳 Paiements Reçus des Clients</div>
@@ -190,7 +184,6 @@
             </div>
         </div>
 
-        <!-- REGLEMENTS MARGE TAB -->
         <div id="content_margin_payments" class="tab-content section-card">
             <div class="flex justify-between items-center mb-6">
                 <div class="section-title">💰 Réglements sur Ma Marge (50%)</div>
@@ -478,65 +471,71 @@
     </div>
 
     <script>
-        // Données initiales
+        // Données initiales avec les 14 clients
         const initialProjects = [
-            {client:"BOYER",designation:"RESIDENTIEL",bon_cmd:"CC-014199",onduleur_ht:0,panneaux_ht:0,batteries_ht:1190,accessoires_ht:0,transport_import:0,transport_livraison:0,installation_ht:800,prix_vente_ttc:5800},
-            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014205",onduleur_ht:1318,panneaux_ht:0,batteries_ht:1342,accessoires_ht:0,transport_import:0,transport_livraison:84,installation_ht:0,prix_vente_ttc:5009.06},
-            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014217",onduleur_ht:699,panneaux_ht:0,batteries_ht:1342,accessoires_ht:0,transport_import:0,transport_livraison:200,installation_ht:0,prix_vente_ttc:4190.66},
-            {client:"NGM GROUP",designation:"MATERIELS PRO",bon_cmd:"CC-014218",onduleur_ht:5670,panneaux_ht:0,batteries_ht:0,accessoires_ht:1126,transport_import:0,transport_livraison:294.74,installation_ht:0,prix_vente_ttc:9442.66},
-            {client:"HOME ELEC",designation:"MATERIELS PRO",bon_cmd:"CC-014200",onduleur_ht:2849,panneaux_ht:0,batteries_ht:0,accessoires_ht:473.8,transport_import:0,transport_livraison:102.6,installation_ht:0,prix_vente_ttc:5003.88},
-            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014204",onduleur_ht:2530,panneaux_ht:0,batteries_ht:0,accessoires_ht:126,transport_import:0,transport_livraison:0,installation_ht:0,prix_vente_ttc:3237.6},
-            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014222",onduleur_ht:95,panneaux_ht:0,batteries_ht:0,accessoires_ht:7.5,transport_import:0,transport_livraison:22.98,installation_ht:0,prix_vente_ttc:153},
-            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014227",onduleur_ht:0,panneaux_ht:0,batteries_ht:0,accessoires_ht:579.12,transport_import:0,transport_livraison:36.99,installation_ht:0,prix_vente_ttc:1490.34},
-            {client:"QUEVREUX",designation:"RESIDENTIEL",bon_cmd:"CC-014229",onduleur_ht:0,panneaux_ht:0,batteries_ht:670,accessoires_ht:0,transport_import:0,transport_livraison:0,installation_ht:0,prix_vente_ttc:2100},
-            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014236",onduleur_ht:0,panneaux_ht:0,batteries_ht:0,accessoires_ht:14.5,transport_import:0,transport_livraison:14.54,installation_ht:0,prix_vente_ttc:48.5},
-            {client:"SOM-BAT",designation:"MATERIELS PRO",bon_cmd:"CC-014252",onduleur_ht:2100,panneaux_ht:0,batteries_ht:0,accessoires_ht:0,transport_import:0,transport_livraison:58.14,installation_ht:0,prix_vente_ttc:3552},
-            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014247",onduleur_ht:0,panneaux_ht:0,batteries_ht:0,accessoires_ht:126,transport_import:0,transport_livraison:0,installation_ht:0,prix_vente_ttc:198},
-            {client:"GREEN ENERGY",designation:"MATERIELS PRO",bon_cmd:"CC-014246",onduleur_ht:1245.92,panneaux_ht:0,batteries_ht:0,accessoires_ht:0,transport_import:0,transport_livraison:10.71,installation_ht:0,prix_vente_ttc:1656},
-            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014240",onduleur_ht:1318,panneaux_ht:0,batteries_ht:1340,accessoires_ht:0,transport_import:0,transport_livraison:150,installation_ht:0,prix_vente_ttc:5109.6},
+            {client:"BOYER",designation:"RESIDENTIEL",bon_cmd:"CC-014199",onduleur_ht:0,panneaux_ht:0,batteries_ht:1190,accessoires_ht:0,transport_import:0,transport_livraison:0,installation_facture_ttc:800,installation_cout_ht:800,prix_vente_ttc:5800},
+            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014205",onduleur_ht:1318,panneaux_ht:0,batteries_ht:1342,accessoires_ht:0,transport_import:0,transport_livraison:84,installation_facture_ttc:0,installation_cout_ht:0,prix_vente_ttc:5009.06},
+            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014217",onduleur_ht:699,panneaux_ht:0,batteries_ht:1342,accessoires_ht:0,transport_import:0,transport_livraison:200,installation_facture_ttc:0,installation_cout_ht:0,prix_vente_ttc:4190.66},
+            {client:"NGM GROUP",designation:"MATERIELS PRO",bon_cmd:"CC-014218",onduleur_ht:5670,panneaux_ht:0,batteries_ht:0,accessoires_ht:1126,transport_import:0,transport_livraison:294.74,installation_facture_ttc:0,installation_cout_ht:0,prix_vente_ttc:9442.66},
+            {client:"HOME ELEC",designation:"MATERIELS PRO",bon_cmd:"CC-014200",onduleur_ht:2849,panneaux_ht:0,batteries_ht:0,accessoires_ht:473.8,transport_import:0,transport_livraison:102.6,installation_facture_ttc:0,installation_cout_ht:0,prix_vente_ttc:5003.88},
+            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014204",onduleur_ht:2530,panneaux_ht:0,batteries_ht:0,accessoires_ht:126,transport_import:0,transport_livraison:0,installation_facture_ttc:0,installation_cout_ht:0,prix_vente_ttc:3237.6},
+            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014222",onduleur_ht:95,panneaux_ht:0,batteries_ht:0,accessoires_ht:7.5,transport_import:0,transport_livraison:22.98,installation_facture_ttc:0,installation_cout_ht:0,prix_vente_ttc:153},
+            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014227",onduleur_ht:0,panneaux_ht:0,batteries_ht:0,accessoires_ht:579.12,transport_import:0,transport_livraison:36.99,installation_facture_ttc:0,installation_cout_ht:0,prix_vente_ttc:1490.34},
+            {client:"QUEVREUX",designation:"RESIDENTIEL",bon_cmd:"CC-014229",onduleur_ht:0,panneaux_ht:0,batteries_ht:670,accessoires_ht:0,transport_import:0,transport_livraison:0,installation_facture_ttc:0,installation_cout_ht:0,prix_vente_ttc:2100},
+            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014236",onduleur_ht:0,panneaux_ht:0,batteries_ht:0,accessoires_ht:14.5,transport_import:0,transport_livraison:14.54,installation_facture_ttc:0,installation_cout_ht:0,prix_vente_ttc:48.5},
+            {client:"SOM-BAT",designation:"MATERIELS PRO",bon_cmd:"CC-014252",onduleur_ht:2100,panneaux_ht:0,batteries_ht:0,accessoires_ht:0,transport_import:0,transport_livraison:58.14,installation_facture_ttc:0,installation_cout_ht:0,prix_vente_ttc:3552},
+            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014247",onduleur_ht:0,panneaux_ht:0,batteries_ht:0,accessoires_ht:126,transport_import:0,transport_livraison:0,installation_facture_ttc:0,installation_cout_ht:0,prix_vente_ttc:198},
+            {client:"GREEN ENERGY",designation:"MATERIELS PRO",bon_cmd:"CC-014246",onduleur_ht:1245.92,panneaux_ht:0,batteries_ht:0,accessoires_ht:0,transport_import:0,transport_livraison:10.71,installation_facture_ttc:0,installation_cout_ht:0,prix_vente_ttc:1656},
+            {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014240",onduleur_ht:1318,panneaux_ht:0,batteries_ht:1340,accessoires_ht:0,transport_import:0,transport_livraison:150,installation_facture_ttc:0,installation_cout_ht:0,prix_vente_ttc:5109.6},
         ];
 
-        let projects = JSON.parse(localStorage.getItem('projects')) || initialProjects;
-        // Force reload if localStorage is empty/corrupted
-        if (!projects || projects.length === 0) {
-            projects = initialProjects;
-            localStorage.setItem('projects', JSON.stringify(projects));
-        }
-        let clientPayments = JSON.parse(localStorage.getItem('clientPayments')) || [];
-        let marginPayments = JSON.parse(localStorage.getItem('marginPayments')) || [];
+        let projects = initialProjects;
+        let clientPayments = [
+            {date:"2025-11-24",projectId:0,amount:5800,method:"Virement",notes:"BOYER"},
+            {date:"2025-11-24",projectId:1,amount:5009.06,method:"Virement",notes:"DISTRILEC CC-014205"},
+            {date:"2025-11-24",projectId:2,amount:4190.66,method:"Virement",notes:"DISTRILEC CC-014217"},
+            {date:"2025-11-24",projectId:4,amount:5003.88,method:"Virement",notes:"HOME ELEC CC-014200"},
+            {date:"2025-11-24",projectId:5,amount:3237.6,method:"Virement",notes:"DISTRILEC CC-014204"},
+            {date:"2025-11-24",projectId:6,amount:153,method:"Virement",notes:"DISTRILEC CC-014222"},
+            {date:"2025-11-24",projectId:7,amount:1490.34,method:"Virement",notes:"DISTRILEC CC-014227"},
+            {date:"2025-11-24",projectId:8,amount:2100,method:"Virement",notes:"QUEVREUX CC-014229"},
+            {date:"2025-11-24",projectId:9,amount:48.5,method:"Virement",notes:"DISTRILEC CC-014236"},
+            {date:"2025-11-24",projectId:10,amount:3552,method:"Virement",notes:"SOM-BAT CC-014252"},
+            {date:"2025-11-24",projectId:12,amount:1656,method:"Virement",notes:"GREEN ENERGY CC-014246"},
+            {date:"2025-11-24",projectId:13,amount:5109.6,method:"Virement",notes:"DISTRILEC CC-014240"},
+        ];
+        let marginPayments = [];
         let editingProjectIndex = null;
 
         function formatCurrency(val) {
             return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val || 0);
         }
 
-        // ===== CALCULS CORRECTS =====
         function getTotalAchatHT(proj) {
             return proj.onduleur_ht + proj.panneaux_ht + proj.batteries_ht + proj.accessoires_ht + proj.transport_import + proj.transport_livraison;
         }
 
+        function getVenteHT(proj) {
+            return proj.prix_vente_ttc / 1.20;
+        }
+
         function getInstallationFactureHT(proj) {
-            // Installation facturée HT = Installation Facture TTC / 1.10
             return proj.installation_facture_ttc / 1.10;
         }
 
         function getInstallationCoutHT(proj) {
-            // Coût installation payé au sous-traitant (en HT)
-            return proj.installation_cout_ht;
+            return proj.installation_cout_ht || 0;
         }
 
         function getInstallationMargin(proj) {
-            // Marge Installation = Installation Facturée HT - Coût Installation HT
             return getInstallationFactureHT(proj) - getInstallationCoutHT(proj);
         }
 
         function getTotalCostHT(proj) {
-            // Total Coût HT = Achat HT + Coût Installation HT (ce qu'on paye)
             return getTotalAchatHT(proj) + getInstallationCoutHT(proj);
         }
 
         function getMargin(proj) {
-            // Marge = Vente TTC - Total Coût HT
             return proj.prix_vente_ttc - getTotalCostHT(proj);
         }
 
@@ -736,21 +735,8 @@
             });
         }
 
-        // ===== CREATE PROJECT MODAL =====
         function openCreateProjectModal() {
             document.getElementById('createProjectModal').classList.add('active');
-            document.getElementById('proj_client').value = '';
-            document.getElementById('proj_bon').value = '';
-            document.getElementById('proj_onduleur').value = 0;
-            document.getElementById('proj_panneaux').value = 0;
-            document.getElementById('proj_batteries').value = 0;
-            document.getElementById('proj_accessoires').value = 0;
-            document.getElementById('proj_transport_import').value = 0;
-            document.getElementById('proj_transport_livraison').value = 0;
-            document.getElementById('proj_installation_facture_ttc').value = 0;
-            document.getElementById('proj_installation_cout_ht').value = 0;
-            document.getElementById('proj_vente_ttc').value = 0;
-            updateCreateProjectCalc();
         }
 
         function closeCreateProjectModal() {
@@ -889,7 +875,6 @@
             }
         }
 
-        // ===== CLIENT PAYMENT MODAL =====
         function openClientPaymentModal() {
             populateProjectSelects();
             document.getElementById('clientPaymentModal').classList.add('active');
@@ -928,7 +913,6 @@
             }
         }
 
-        // ===== MARGIN PAYMENT MODAL =====
         function openMarginPaymentModal() {
             document.getElementById('marginPaymentModal').classList.add('active');
             document.getElementById('mp_date').valueAsDate = new Date();
@@ -965,7 +949,6 @@
             }
         }
 
-        // ===== MAIN RENDER =====
         function renderAll() {
             renderOverview();
             renderProjects();
@@ -977,39 +960,7 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            // Force reset if data is missing
-            if (!projects || projects.length === 0) {
-                console.log('Data missing, forcing reset...');
-                localStorage.removeItem('projects');
-                localStorage.removeItem('clientPayments');
-                localStorage.removeItem('marginPayments');
-                projects = initialProjects;
-                clientPayments = [
-                    {date:"2025-11-24",projectId:0,amount:5800,method:"Virement",notes:"BOYER"},
-                    {date:"2025-11-24",projectId:1,amount:5009.06,method:"Virement",notes:"DISTRILEC"},
-                    {date:"2025-11-24",projectId:2,amount:4190.66,method:"Virement",notes:"DISTRILEC"},
-                    {date:"2025-11-24",projectId:4,amount:5003.88,method:"Virement",notes:"HOME ELEC"},
-                    {date:"2025-11-24",projectId:5,amount:3237.6,method:"Virement",notes:"DISTRILEC"},
-                    {date:"2025-11-24",projectId:6,amount:153,method:"Virement",notes:"DISTRILEC"},
-                    {date:"2025-11-24",projectId:7,amount:1490.34,method:"Virement",notes:"DISTRILEC"},
-                    {date:"2025-11-24",projectId:8,amount:2100,method:"Virement",notes:"QUEVREUX"},
-                    {date:"2025-11-24",projectId:9,amount:48.5,method:"Virement",notes:"DISTRILEC"},
-                    {date:"2025-11-24",projectId:10,amount:3552,method:"Virement",notes:"SOM-BAT"},
-                    {date:"2025-11-24",projectId:12,amount:1656,method:"Virement",notes:"GREEN ENERGY"},
-                    {date:"2025-11-24",projectId:13,amount:5109.6,method:"Virement",notes:"DISTRILEC"},
-                ];
-                marginPayments = [];
-                localStorage.setItem('projects', JSON.stringify(projects));
-                localStorage.setItem('clientPayments', JSON.stringify(clientPayments));
-                localStorage.setItem('marginPayments', JSON.stringify(marginPayments));
-            }
-            console.log('Projects loaded:', projects.length);
-            console.log('First project:', projects[0]);
             renderAll();
-            document.getElementById('proj_vente_ttc').addEventListener('input', updateCreateProjectCalc);
-            document.getElementById('proj_installation').addEventListener('input', updateCreateProjectCalc);
-            document.getElementById('edit_proj_vente_ttc').addEventListener('input', updateEditProjectCalc);
-            document.getElementById('edit_proj_installation').addEventListener('input', updateEditProjectCalc);
         });
     </script>
 </body>
