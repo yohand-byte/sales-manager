@@ -401,7 +401,12 @@
 
                 <div class="form-group">
                     <label>Projet *</label>
-                    <select id="cp_project"></select>
+                    <select id="cp_project" onchange="updatePaymentDueAmount()"></select>
+                </div>
+
+                <div class="form-group">
+                    <label>Montant Dû (€)</label>
+                    <input type="number" id="cp_due_amount" readonly style="background: #f3f4f6; color: #666;">
                 </div>
 
                 <div class="form-group">
@@ -663,7 +668,10 @@
                                 <td>${new Date(pay.date).toLocaleDateString('fr-FR')}</td>
                                 <td>${pay.method}</td>
                                 <td>${pay.notes}</td>
-                                <td><button onclick="deleteClientPayment(${clientPayments.indexOf(pay)})" class="btn-delete">Supprimer</button></td>
+                                <td>
+                                <button onclick="editClientPayment(${clientPayments.indexOf(pay)})" class="btn-edit">Modifier</button>
+                                <button onclick="deleteClientPayment(${clientPayments.indexOf(pay)})" class="btn-delete">Supprimer</button>
+                            </td>
                             `;
                         } else {
                             payRow.innerHTML = `
@@ -674,7 +682,10 @@
                                 <td>${new Date(pay.date).toLocaleDateString('fr-FR')}</td>
                                 <td>${pay.method}</td>
                                 <td>${pay.notes}</td>
-                                <td><button onclick="deleteClientPayment(${clientPayments.indexOf(pay)})" class="btn-delete">Supprimer</button></td>
+                                <td>
+                                <button onclick="editClientPayment(${clientPayments.indexOf(pay)})" class="btn-edit">Modifier</button>
+                                <button onclick="deleteClientPayment(${clientPayments.indexOf(pay)})" class="btn-delete">Supprimer</button>
+                            </td>
                             `;
                         }
                         tbody.appendChild(payRow);
@@ -722,6 +733,14 @@
             document.getElementById('kpi_my_share').textContent = formatCurrency(myShare);
             document.getElementById('kpi_client_payments').textContent = formatCurrency(clientPayTotal);
             document.getElementById('kpi_margin_payments').textContent = formatCurrency(marginPayTotal);
+        }
+
+                function updatePaymentDueAmount() {
+            const projectId = parseInt(document.getElementById('cp_project').value);
+            if (projectId >= 0 && projectId < projects.length) {
+                const proj = projects[projectId];
+                document.getElementById('cp_due_amount').value = proj.prix_vente_ttc.toFixed(2);
+            }
         }
 
         function populateProjectSelects() {
@@ -885,6 +904,11 @@
 
         function closeClientPaymentModal() {
             document.getElementById('clientPaymentModal').classList.remove('active');
+            delete document.getElementById('clientPaymentModal').dataset.editingIndex;
+            document.getElementById('cp_date').valueAsDate = new Date();
+            document.getElementById('cp_amount').value = 0;
+            document.getElementById('cp_notes').value = '';
+            document.getElementById('cp_due_amount').value = '';
         }
 
         function saveClientPayment() {
@@ -899,10 +923,30 @@
                 return;
             }
 
-            clientPayments.push({ date, projectId, amount, method, notes });
+            const editingIndex = document.getElementById('clientPaymentModal').dataset.editingIndex;
+            if (editingIndex !== undefined) {
+                // Modification
+                clientPayments[editingIndex] = { date, projectId, amount, method, notes };
+                delete document.getElementById('clientPaymentModal').dataset.editingIndex;
+            } else {
+                // Nouveau paiement
+                clientPayments.push({ date, projectId, amount, method, notes });
+            }
             localStorage.setItem('clientPayments', JSON.stringify(clientPayments));
             renderAll();
             closeClientPaymentModal();
+        }
+
+                function editClientPayment(idx) {
+            const payment = clientPayments[idx];
+            document.getElementById('cp_date').value = payment.date;
+            document.getElementById('cp_project').value = payment.projectId;
+            updatePaymentDueAmount();
+            document.getElementById('cp_amount').value = payment.amount;
+            document.getElementById('cp_method').value = payment.method;
+            document.getElementById('cp_notes').value = payment.notes;
+            document.getElementById('clientPaymentModal').dataset.editingIndex = idx;
+            document.getElementById('clientPaymentModal').classList.add('active');
         }
 
         function deleteClientPayment(idx) {
