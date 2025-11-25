@@ -80,6 +80,7 @@
             <button class="tab-btn" onclick="switchTab(this, 'projects')">📋 Projets</button>
             <button class="tab-btn" onclick="switchTab(this, 'client_payments')">💳 Paiements Clients</button>
             <button class="tab-btn" onclick="switchTab(this, 'margin_payments')">💰 Réglements Marge</button>
+            <button class="tab-btn" onclick="switchTab(this, 'margin_tracking')">📈 Suivi Ma Marge</button>
         </div>
 
         <div id="content_overview" class="tab-content active section-card">
@@ -97,8 +98,6 @@
                             <th>Vente TTC (€)</th>
                             <th>Marge (€)</th>
                             <th>Ma Part 50% (€)</th>
-                            <th>Payé Marge (€)</th>
-                            <th>Reste (€)</th>
                         </tr>
                     </thead>
                     <tbody id="overviewTable"></tbody>
@@ -209,6 +208,40 @@
             <div class="mt-6 p-4 bg-green-50 rounded">
                 <div class="text-sm text-gray-600">Total Réglements Marge Reçus</div>
                 <div class="text-2xl font-bold text-green-600" id="total_margin_payments">0 €</div>
+            </div>
+        </div>
+
+        <!-- SUIVI MA MARGE TAB -->
+        <div id="content_margin_tracking" class="tab-content section-card">
+            <div class="section-title">📈 Suivi de Ma Marge (50%)</div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>BC</th>
+                            <th>Marge Totale (€)</th>
+                            <th>Ma Part (€)</th>
+                            <th>Réglements Reçus (€)</th>
+                            <th>Reste à Recevoir (€)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="marginTrackingTable"></tbody>
+                </table>
+            </div>
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="p-4 bg-blue-50 rounded">
+                    <div class="text-sm text-gray-600">Ma Part Totale (50%)</div>
+                    <div class="text-2xl font-bold text-blue-600" id="tracking_my_share_total">0 €</div>
+                </div>
+                <div class="p-4 bg-green-50 rounded">
+                    <div class="text-sm text-gray-600">Réglements Reçus</div>
+                    <div class="text-2xl font-bold text-green-600" id="tracking_margin_received">0 €</div>
+                </div>
+                <div class="p-4 bg-yellow-50 rounded">
+                    <div class="text-sm text-gray-600">Reste à Recevoir</div>
+                    <div class="text-2xl font-bold text-yellow-600" id="tracking_margin_remaining">0 €</div>
+                </div>
             </div>
         </div>
     </div>
@@ -494,8 +527,8 @@
             {client:"DISTRILEC",designation:"MATERIELS PRO",bon_cmd:"CC-014240",onduleur_ht:1318,panneaux_ht:0,batteries_ht:1340,accessoires_ht:0,transport_import:0,transport_livraison:150,installation_facture_ttc:0,installation_cout_ht:0,prix_vente_ttc:5109.6},
         ];
 
-        let projects = initialProjects;
-        let clientPayments = [
+        let projects = JSON.parse(localStorage.getItem('projects')) || initialProjects;
+        let clientPayments = JSON.parse(localStorage.getItem('clientPayments')) || [
             {date:"2025-11-24",projectId:0,amount:5800,method:"Virement",notes:"BOYER"},
             {date:"2025-11-24",projectId:1,amount:5009.06,method:"Virement",notes:"DISTRILEC CC-014205"},
             {date:"2025-11-24",projectId:2,amount:4190.66,method:"Virement",notes:"DISTRILEC CC-014217"},
@@ -509,7 +542,7 @@
             {date:"2025-11-24",projectId:12,amount:1656,method:"Virement",notes:"GREEN ENERGY CC-014246"},
             {date:"2025-11-24",projectId:13,amount:5109.6,method:"Virement",notes:"DISTRILEC CC-014240"},
         ];
-        let marginPayments = [];
+        let marginPayments = JSON.parse(localStorage.getItem('marginPayments')) || [];
         let editingProjectIndex = null;
 
         function formatCurrency(val) {
@@ -567,9 +600,6 @@
                 const totalCostHT = getTotalCostHT(proj);
                 const margin = getMargin(proj);
                 const myShare = getMyShare(proj);
-                const marginPaid = marginPayments.reduce((s, p) => s + p.amount, 0);
-                const remaining = myShare - marginPaid;
-
                 totalAchatHT += achatHT;
                 totalInstallationCoutHT += instCoutHT;
                 totalVente += proj.prix_vente_ttc;
@@ -587,8 +617,6 @@
                     <td>${formatCurrency(proj.prix_vente_ttc)}</td>
                     <td><span class="positive">${formatCurrency(margin)}</span></td>
                     <td><span class="positive">${formatCurrency(myShare)}</span></td>
-                    <td>${formatCurrency(marginPaid)}</td>
-                    <td>${formatCurrency(remaining)}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -711,12 +739,48 @@
                     <td><span class="positive">${formatCurrency(pay.amount)}</span></td>
                     <td>${pay.method}</td>
                     <td>${pay.notes}</td>
-                    <td><button onclick="deleteMarginPayment(${idx})" class="btn-delete">Supprimer</button></td>
+                    <td>
+                        <button onclick="editMarginPayment(${idx})" class="btn-edit">Modifier</button>
+                        <button onclick="deleteMarginPayment(${idx})" class="btn-delete">Supprimer</button>
+                    </td>
                 `;
                 tbody.appendChild(row);
             });
 
             document.getElementById('total_margin_payments').textContent = formatCurrency(total);
+        }
+
+        function renderMarginTracking() {
+            const tbody = document.getElementById('marginTrackingTable');
+            tbody.innerHTML = '';
+            let totalMyShare = 0, totalReceived = 0;
+
+            projects.forEach((proj, idx) => {
+                const margin = getMargin(proj);
+                const myShare = getMyShare(proj);
+                // Pas de réglements par projet pour l'instant (réglements globaux)
+                const received = 0;
+                const remaining = myShare - received;
+
+                totalMyShare += myShare;
+                totalReceived += marginPayments.reduce((sum, p) => sum + p.amount, 0);
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${proj.client}</td>
+                    <td>${proj.bon_cmd}</td>
+                    <td>${formatCurrency(margin)}</td>
+                    <td><span class="positive">${formatCurrency(myShare)}</span></td>
+                    <td>-</td>
+                    <td><span class="negative">${formatCurrency(myShare)}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            const globalReceived = marginPayments.reduce((sum, p) => sum + p.amount, 0);
+            document.getElementById('tracking_my_share_total').textContent = formatCurrency(totalMyShare);
+            document.getElementById('tracking_margin_received').textContent = formatCurrency(globalReceived);
+            document.getElementById('tracking_margin_remaining').textContent = formatCurrency(totalMyShare - globalReceived);
         }
 
         function updateKPIs() {
@@ -740,6 +804,10 @@
             if (projectId >= 0 && projectId < projects.length) {
                 const proj = projects[projectId];
                 document.getElementById('cp_due_amount').value = proj.prix_vente_ttc.toFixed(2);
+                // Auto-remplir les notes avec le numéro de projet
+                if (!document.getElementById('cp_notes').value || document.getElementById('cp_notes').value === '') {
+                    document.getElementById('cp_notes').value = proj.bon_cmd;
+                }
             }
         }
 
@@ -899,7 +967,12 @@
             document.getElementById('clientPaymentModal').classList.add('active');
             document.getElementById('cp_date').valueAsDate = new Date();
             document.getElementById('cp_amount').value = 0;
-            document.getElementById('cp_notes').value = '';
+            // Auto-remplir notes avec le projet sélectionné
+            if (projects.length > 0) {
+                document.getElementById('cp_notes').value = projects[0].bon_cmd;
+            } else {
+                document.getElementById('cp_notes').value = '';
+            }
         }
 
         function closeClientPaymentModal() {
@@ -945,6 +1018,11 @@
             document.getElementById('cp_amount').value = payment.amount;
             document.getElementById('cp_method').value = payment.method;
             document.getElementById('cp_notes').value = payment.notes;
+            // Auto-remplir les notes avec le numéro de projet si vide
+            if (!document.getElementById('cp_notes').value && payment.projectId >= 0) {
+                const proj = projects[payment.projectId];
+                document.getElementById('cp_notes').value = proj.bon_cmd;
+            }
             document.getElementById('clientPaymentModal').dataset.editingIndex = idx;
             document.getElementById('clientPaymentModal').classList.add('active');
         }
@@ -966,6 +1044,10 @@
 
         function closeMarginPaymentModal() {
             document.getElementById('marginPaymentModal').classList.remove('active');
+            delete document.getElementById('marginPaymentModal').dataset.editingIndex;
+            document.getElementById('mp_date').valueAsDate = new Date();
+            document.getElementById('mp_amount').value = 0;
+            document.getElementById('mp_notes').value = '';
         }
 
         function saveMarginPayment() {
@@ -979,10 +1061,28 @@
                 return;
             }
 
-            marginPayments.push({ date, amount, method, notes });
+            const editingIndex = document.getElementById('marginPaymentModal').dataset.editingIndex;
+            if (editingIndex !== undefined) {
+                // Modification
+                marginPayments[editingIndex] = { date, amount, method, notes };
+                delete document.getElementById('marginPaymentModal').dataset.editingIndex;
+            } else {
+                // Nouveau paiement
+                marginPayments.push({ date, amount, method, notes });
+            }
             localStorage.setItem('marginPayments', JSON.stringify(marginPayments));
             renderAll();
             closeMarginPaymentModal();
+        }
+
+        function editMarginPayment(idx) {
+            const payment = marginPayments[idx];
+            document.getElementById('mp_date').value = payment.date;
+            document.getElementById('mp_amount').value = payment.amount;
+            document.getElementById('mp_method').value = payment.method;
+            document.getElementById('mp_notes').value = payment.notes;
+            document.getElementById('marginPaymentModal').dataset.editingIndex = idx;
+            document.getElementById('marginPaymentModal').classList.add('active');
         }
 
         function deleteMarginPayment(idx) {
@@ -994,10 +1094,16 @@
         }
 
         function renderAll() {
+            // Sauvegarder avant de rendre
+            localStorage.setItem('projects', JSON.stringify(projects));
+            localStorage.setItem('clientPayments', JSON.stringify(clientPayments));
+            localStorage.setItem('marginPayments', JSON.stringify(marginPayments));
+            
             renderOverview();
             renderProjects();
             renderClientPayments();
             renderMarginPayments();
+            renderMarginTracking();
             updateKPIs();
             populateProjectSelects();
         }
