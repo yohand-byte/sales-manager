@@ -47,7 +47,7 @@
         .info-box strong { display: inline-block; min-width: 200px; }
         .highlight { background: #fef3c7; padding: 12px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid #eab308; }
         @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } .grid-3 { grid-template-columns: 1fr; } }
-</style>
+    </style>
     <script>
         // Simple client-side gate (not meant for high security)
         const SM_PASSWORD = 'Qualiwatt55!';
@@ -802,12 +802,9 @@
             projects.forEach((proj, idx) => {
                 const margin = getMargin(proj);
                 const myShare = getMyShare(proj);
-                // Pas de réglements par projet pour l'instant (réglements globaux)
-                const received = 0;
-                const remaining = myShare - received;
+                const remaining = myShare;
 
                 totalMyShare += myShare;
-                totalReceived += marginPayments.reduce((sum, p) => sum + p.amount, 0);
 
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -816,7 +813,7 @@
                     <td>${formatCurrency(margin)}</td>
                     <td><span class="positive">${formatCurrency(myShare)}</span></td>
                     <td>-</td>
-                    <td><span class="negative">${formatCurrency(myShare)}</span></td>
+                    <td><span class="negative">${formatCurrency(remaining)}</span></td>
                 `;
                 tbody.appendChild(row);
             });
@@ -843,12 +840,11 @@
             document.getElementById('kpi_margin_payments').textContent = formatCurrency(marginPayTotal);
         }
 
-                function updatePaymentDueAmount() {
+        function updatePaymentDueAmount() {
             const projectId = parseInt(document.getElementById('cp_project').value);
             if (projectId >= 0 && projectId < projects.length) {
                 const proj = projects[projectId];
                 document.getElementById('cp_due_amount').value = proj.prix_vente_ttc.toFixed(2);
-                // Auto-remplir les notes avec le numéro de projet
                 if (!document.getElementById('cp_notes').value || document.getElementById('cp_notes').value === '') {
                     document.getElementById('cp_notes').value = proj.bon_cmd;
                 }
@@ -1009,22 +1005,21 @@
         function openClientPaymentModal() {
             populateProjectSelects();
             document.getElementById('clientPaymentModal').classList.add('active');
-            document.getElementById('cp_date').valueAsDate = new Date();
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0];
+            document.getElementById('cp_date').value = dateStr;
             document.getElementById('cp_amount').value = 0;
-            // Auto-remplir notes avec le projet sélectionné
             if (projects.length > 0) {
                 document.getElementById('cp_notes').value = projects[0].bon_cmd;
             } else {
                 document.getElementById('cp_notes').value = '';
             }
-            // APPELER updatePaymentDueAmount pour afficher le montant dû
             updatePaymentDueAmount();
         }
 
         function closeClientPaymentModal() {
             document.getElementById('clientPaymentModal').classList.remove('active');
             delete document.getElementById('clientPaymentModal').dataset.editingIndex;
-            document.getElementById('cp_date').valueAsDate = new Date();
             document.getElementById('cp_amount').value = 0;
             document.getElementById('cp_notes').value = '';
             document.getElementById('cp_due_amount').value = '';
@@ -1044,11 +1039,9 @@
 
             const editingIndex = document.getElementById('clientPaymentModal').dataset.editingIndex;
             if (editingIndex !== undefined) {
-                // Modification
                 clientPayments[editingIndex] = { date, projectId, amount, method, notes };
                 delete document.getElementById('clientPaymentModal').dataset.editingIndex;
             } else {
-                // Nouveau paiement
                 clientPayments.push({ date, projectId, amount, method, notes });
             }
             localStorage.setItem('clientPayments', JSON.stringify(clientPayments));
@@ -1056,7 +1049,7 @@
             closeClientPaymentModal();
         }
 
-                function editClientPayment(idx) {
+        function editClientPayment(idx) {
             const payment = clientPayments[idx];
             document.getElementById('cp_date').value = payment.date;
             document.getElementById('cp_project').value = payment.projectId;
@@ -1064,7 +1057,6 @@
             document.getElementById('cp_amount').value = payment.amount;
             document.getElementById('cp_method').value = payment.method;
             document.getElementById('cp_notes').value = payment.notes;
-            // Auto-remplir les notes avec le numéro de projet si vide
             if (!document.getElementById('cp_notes').value && payment.projectId >= 0) {
                 const proj = projects[payment.projectId];
                 document.getElementById('cp_notes').value = proj.bon_cmd;
@@ -1083,15 +1075,18 @@
 
         function openMarginPaymentModal() {
             document.getElementById('marginPaymentModal').classList.add('active');
-            document.getElementById('mp_date').valueAsDate = new Date();
+            // Remplir correctement la date avec le format ISO
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0];
+            document.getElementById('mp_date').value = dateStr;
             document.getElementById('mp_amount').value = 0;
+            document.getElementById('mp_method').value = 'Virement';
             document.getElementById('mp_notes').value = '';
         }
 
         function closeMarginPaymentModal() {
             document.getElementById('marginPaymentModal').classList.remove('active');
             delete document.getElementById('marginPaymentModal').dataset.editingIndex;
-            document.getElementById('mp_date').valueAsDate = new Date();
             document.getElementById('mp_amount').value = 0;
             document.getElementById('mp_notes').value = '';
         }
@@ -1102,8 +1097,11 @@
             const method = document.getElementById('mp_method').value;
             const notes = document.getElementById('mp_notes').value;
 
+            console.log('Saving margin payment:', { date, amount, method, notes });
+
             if (!date || amount <= 0) {
-                alert('Remplissez tous les champs');
+                alert('Remplissez tous les champs (Date et Montant obligatoires)');
+                console.log('Validation failed - date:', date, 'amount:', amount);
                 return;
             }
 
@@ -1112,11 +1110,16 @@
                 // Modification
                 marginPayments[editingIndex] = { date, amount, method, notes };
                 delete document.getElementById('marginPaymentModal').dataset.editingIndex;
+                console.log('Updated margin payment at index:', editingIndex);
             } else {
                 // Nouveau paiement
                 marginPayments.push({ date, amount, method, notes });
+                console.log('Added new margin payment. Total:', marginPayments.length);
             }
+            
             localStorage.setItem('marginPayments', JSON.stringify(marginPayments));
+            console.log('Saved to localStorage. Current marginPayments:', marginPayments);
+            
             renderAll();
             closeMarginPaymentModal();
         }
@@ -1140,7 +1143,6 @@
         }
 
         function renderAll() {
-            // Sauvegarder avant de rendre
             localStorage.setItem('projects', JSON.stringify(projects));
             localStorage.setItem('clientPayments', JSON.stringify(clientPayments));
             localStorage.setItem('marginPayments', JSON.stringify(marginPayments));
@@ -1159,6 +1161,6 @@
             renderAll();
         });
     </script>
-    </div> <!-- end appContent -->
+    </div>
 </body>
 </html>
